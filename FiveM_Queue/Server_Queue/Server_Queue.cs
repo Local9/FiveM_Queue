@@ -102,7 +102,7 @@ namespace Server
         {
             Debug.WriteLine($"Queue: {queue.Count}");
             Debug.WriteLine($"Priority Queue: {pQueue.Count}");
-            session.Where(k => k.Value == SessionState.Queue).ToList().ForEach(j => 
+            session.Where(k => k.Value == SessionState.Queue).ToList().ForEach(j =>
             {
                 Debug.WriteLine($"{j.Key} is in queue. Timer: {timer.TryGetValue(j.Key, out DateTime oldTimer)} Priority: {priority.TryGetValue(j.Key, out int oldPriority)}");
             });
@@ -115,18 +115,18 @@ namespace Server
 
         private void CreateMessagesJSON(string path)
         {
-            messages.Add("Gathering","Gathering queue information");
-            messages.Add("License","License is required");
-            messages.Add("Steam","Steam is required");
-            messages.Add("Banned","You are banned");
-            messages.Add("Whitelist","You are not whitelisted");
-            messages.Add("Queue","You are in queue");
-            messages.Add("PriorityQueue","You are in priority queue");
-            messages.Add("Canceled","Canceled from queue");
-            messages.Add("Error","An error prevented deferrals");
+            messages.Add("Gathering", "Gathering queue information");
+            messages.Add("License", "License is required");
+            messages.Add("Steam", "Steam is required");
+            messages.Add("Banned", "You are banned");
+            messages.Add("Whitelist", "You are not whitelisted");
+            messages.Add("Queue", "You are in queue");
+            messages.Add("PriorityQueue", "You are in priority queue");
+            messages.Add("Canceled", "Canceled from queue");
+            messages.Add("Error", "An error prevented deferrals");
             messages.Add("Timeout", "Exceeded server owners maximum loading time threshold");
-            messages.Add("QueueCount","[Queue: {0}]");
-            messages.Add("Symbols","No symbols are allowed in your Steam name");
+            messages.Add("QueueCount", "[Queue: {0}]");
+            messages.Add("Symbols", "No symbols are allowed in your Steam name");
             File.WriteAllText(path, JsonConvert.SerializeObject(messages, Formatting.Indented));
         }
 
@@ -259,7 +259,7 @@ namespace Server
                 queue = temp;
                 return queue.Count;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - QueueCount()"); return queue.Count;
             }
@@ -279,7 +279,7 @@ namespace Server
                         if (stateChangeMessages) { Debug.WriteLine($"[{resourceName}]: CANCELED -> REMOVED -> {license}"); }
                         continue;
                     }
-                    if(!priority.TryGetValue(license, out int priorityNum))
+                    if (!priority.TryGetValue(license, out int priorityNum))
                     {
                         newQueue.Enqueue(license);
                         continue;
@@ -304,7 +304,7 @@ namespace Server
                 });
                 return pQueue.Count;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - PriorityQueueCount()"); return pQueue.Count;
             }
@@ -324,7 +324,7 @@ namespace Server
                 { NewLoading(license, Reserved.Public); return true; }
                 else { return false; }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - Loading()"); return false;
             }
@@ -433,7 +433,7 @@ namespace Server
                     if (stateChangeMessages) { Debug.WriteLine($"[{resourceName}]: QUEUE -> LOADING -> ({Enum.GetName(typeof(Reserved), slotType)}) {license}"); }
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - NewLoading()");
             }
@@ -446,7 +446,7 @@ namespace Server
                 if (!timer.ContainsKey(license)) { return false; }
                 return timer[license].AddMinutes(time) < DateTime.UtcNow;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - IsTimeUp()"); return false;
             }
@@ -462,7 +462,7 @@ namespace Server
                     index.TryUpdate(license, place, oldPlace);
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - UpdatePlace()");
             }
@@ -478,7 +478,7 @@ namespace Server
                     timer.TryUpdate(license, DateTime.UtcNow, oldTime);
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - UpdateTimer()");
             }
@@ -511,14 +511,6 @@ namespace Server
                                 UpdateTimer(license);
                                 if (stateChangeMessages) { Debug.WriteLine($"[{resourceName}]: LOADING -> GRACE -> {license}"); }
                             }
-                            else
-                            {
-                                if (sentLoading.ContainsKey(license) && Players.FirstOrDefault(i => i.Identifiers["license"] == license) != null)
-                                {
-                                    TriggerEvent("fivemqueue: newloading", sentLoading[license]);
-                                    sentLoading.TryRemove(license, out Player oldPlayer);
-                                }
-                            }
                             break;
                         case SessionState.Grace:
                             if (!timer.TryGetValue(license, out DateTime oldGraceTime))
@@ -546,7 +538,7 @@ namespace Server
                     }
                 });
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - UpdateStates()");
             }
@@ -563,7 +555,7 @@ namespace Server
                 if (doReserved) { reserved.TryRemove(license, out Reserved oldReserved); }
                 if (doSlot) { slotTaken.TryRemove(license, out Reserved oldSlot); }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - RemoveFrom()");
             }
@@ -636,7 +628,7 @@ namespace Server
                 }
                 maxSession = newMax;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - QueueChangeMax()");
             }
@@ -703,10 +695,13 @@ namespace Server
                 {
                     return;
                 }
-                session.TryGetValue(license, out SessionState oldState);
-                session.TryUpdate(license, SessionState.Grace, oldState);
-                if (stateChangeMessages) { Debug.WriteLine($"[{resourceName}]: {Enum.GetName(typeof(SessionState), oldState).ToUpper()} -> GRACE -> {license}"); }
-                UpdateTimer(license);
+                bool hasState = session.TryGetValue(license, out SessionState oldState);
+                if (hasState && oldState != SessionState.Queue)
+                {
+                    session.TryUpdate(license, SessionState.Grace, oldState);
+                    if (stateChangeMessages) { Debug.WriteLine($"[{resourceName}]: {Enum.GetName(typeof(SessionState), oldState).ToUpper()} -> GRACE -> {license}"); }
+                    UpdateTimer(license);
+                }
             }
             catch (Exception)
             {
@@ -748,7 +743,7 @@ namespace Server
             return true;
         }
 
-        private async void PlayerConnecting([FromSource]Player source, string playerName, dynamic denyWithReason, dynamic deferrals)
+        private async void PlayerConnecting([FromSource] Player source, string playerName, dynamic denyWithReason, dynamic deferrals)
         {
             try
             {
@@ -926,7 +921,7 @@ namespace Server
                 }
                 Debug.WriteLine($"{steamHex}");
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Debug.WriteLine($"[{resourceName} - ERROR] - SteamProfileToHex()");
             }
